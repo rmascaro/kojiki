@@ -1,10 +1,8 @@
 secretGenerator:
-- name: mysql-pass
+- name: mysql-gen-pass
   namespace: kojiki
   literals:
-  - password=YOUR_DB_PASSWORD
-  - root-password=YOUR_ROOT_DB_PASSWORD
+  - password=#XZSAwq21#
 resources:
   - namespace.yaml
-  - mysql-deployment.yaml
   - wordpress-deployment.yaml
