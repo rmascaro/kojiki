@@ -21,7 +21,8 @@ spec:
   selector:
     app: wordpress
     tier: frontend
-  type: LoadBalancer
+  type: NodePort
+  #type: LoadBalancer
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -84,3 +85,90 @@ spec:
       - name: wordpress-persistent-storage
         persistentVolumeClaim:
           claimName: wp-pv-claim
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wordpress
+  namespace: kojiki
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    #cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  rules:
+  - host: dev.kojiki.eu
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wordpress
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - dev.kojiki.eu
+    secretName: wp-secret-name
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: cert-manager
+spec:
+  acme:
+
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: info@kojiki.eu
+
+    # ACME server URL for Let’s Encrypt’s staging environment.
+    # The staging environment will not issue trusted certificates but is
+    # used to ensure that the verification process is working properly
+    # before moving to production
+    #server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+    privateKeySecretRef:
+      # Secret resource used to store the account's private key.
+      name: letsencrypt-secret
+
+    # Enable the HTTP-01 challenge provider
+    # you prove ownership of a domain by ensuring that a particular
+    # file is present at the domain
+    solvers:
+    - http01:
+        ingress:
+            class: azure/application-gateway
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+  namespace: cert-manager
+spec:
+  acme:
+
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: info@kojiki.eu
+
+    # Production Signed Environment
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+    privateKeySecretRef:
+      # Secret resource used to store the account's private key.
+      name: letsencrypt-prod-secret
+
+    # Enable the HTTP-01 challenge provider
+    # you prove ownership of a domain by ensuring that a particular
+    # file is present at the domain
+    solvers:
+    - http01:
+        ingress:
+            class: azure/application-gateway
