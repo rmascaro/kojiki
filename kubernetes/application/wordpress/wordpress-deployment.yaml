@@ -93,13 +93,11 @@ metadata:
   namespace: kojiki
   annotations:
     kubernetes.io/ingress.class: azure/application-gateway
-    #for development purpose
-    #cert-manager.io/cluster-issuer: letsencrypt-staging
     cert-manager.io/cluster-issuer: letsencrypt
     cert-manager.io/acme-challenge-type: http01
 spec:
   rules:
-  - host: dev.kojiki.eu
+  - host: w3-int.kojiki.eu
     http:
       paths:
       - path: /
@@ -111,5 +109,5 @@ spec:
               number: 80
   tls:
   - hosts:
-    - dev.kojiki.eu
+    - w3-int.kojiki.eu
     secretName: wp-secret-name

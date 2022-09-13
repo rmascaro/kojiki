@@ -1,0 +1,76 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: test
+  labels:
+    name: httpd
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd
+  namespace: test
+  labels:
+    app: httpd
+spec:
+  selector:
+    matchLabels:
+      app: httpd
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: httpd
+        tier: frontend
+    spec:
+      containers:
+      - image: httpd:latest
+        name: httpd
+        env:
+        ports:
+        - containerPort: 80
+          name: httpd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpd
+  namespace: test
+  labels:
+    app: httpd
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: httpd
+    tier: frontend
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: httpd
+  namespace: test
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    #for development purpose
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  rules:
+  - host: test.kojiki.eu
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: httpd
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - test.kojiki.eu
+    secretName: test-secret-name
