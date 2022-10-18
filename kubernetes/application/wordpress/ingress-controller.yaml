@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kojiki-ingress
+  namespace: kojiki
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  rules:
+  - host: web-int.kojiki.eu
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wordpress
+            port:
+              number: 80
+  - host: keycloak.kojiki.eu
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - "keycloak.kojiki.eu"
+    secretName: kc-secret-ssl
+  - hosts:
+    - "web-int.kojiki.eu"
+    secretName: wp-secret-ssl
+#  - hosts:
+#    - "web-int.kojiki.eu"
+#    - "keycloak.kojiki.eu"
+#    secretName: kojiki-secret-name

@@ -1,0 +1,156 @@
+#kind: Namespace
+#apiVersion: v1
+#metadata:
+#  name: keycloak
+#  labels:
+#    name: keycloak
+#---
+apiVersion: v1
+kind: Secret
+metadata:  
+  name: kc-secrets
+  namespace: kojiki
+type: Opaque
+data:
+  username: a2V5Y2xvYWsK
+  password: I1haU0F3cTIxIw==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: kojiki
+  labels:
+    app: keycloak
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: keycloak
+        tier: frontend
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        args: 
+        - "start"
+        name: keycloak
+        env:
+        - name: KC_CACHE
+          value: "local"
+        - name: KC_CACHE_STACK
+          value: "azure"
+        - name: KC_PROXY
+          value: "edge"
+        - name: KC_HEALTH_ENABLED
+          value: "true"
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_HTTP_PORT
+          value: "8080"
+        - name: KC_HTTP_HOST
+          value: "0.0.0.0"
+        - name: KC_HTTPS_PORT
+          value: "8443"
+        - name: KC_HOSTNAME
+          value: keycloak.kojiki.eu
+        - name: KC_HOSTNAME_ADMIN
+          value: keycloak.kojiki.eu
+        - name: KC_DB_URL
+          value: "jdbc:mysql://kojiki-mysqldb.mysql.database.azure.com:3306/keycloak?verifyServerCertificate=false&useSSL=true"
+        - name: KC_DB
+          value: mysql
+        #- name: KC_DB_URL_HOST
+        #  value: kojiki-mysqldb.mysql.database.azure.com
+        #- name: KC_DB_URL_DATABASE
+        #  value: keycloak
+        #- name: KC_DB_SCHEMA
+        #  value: keycloak
+        #- name: KC_DB_URL_PORT
+        #  value: "3306"     
+        - name: KC_DB_USERNAME
+          value: keycloak
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kc-secrets
+              key: password
+        #- name: KC_DB_URL_PROPERTIES
+        #  value: "verifyServerCertificate=false&useSSL=true"
+        - name: KEYCLOAK_ADMIN
+          value: "keycloak"         
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kc-secrets
+              key: password
+        ports:
+        - containerPort: 8080
+          name: keycloak
+        volumeMounts:
+        - name: keycloak-persistent-storage
+          mountPath: /opt/keycloak
+      volumes:
+      - name: keycloak-persistent-storage
+        persistentVolumeClaim:
+          claimName: keycloak-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: kojiki
+  labels:
+    app: keycloak
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: keycloak
+    tier: frontend
+  type: NodePort
+#---
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: keycloak
+#  namespace: kojiki
+#  annotations:
+#    kubernetes.io/ingress.class: azure/application-gateway
+#    cert-manager.io/cluster-issuer: letsencrypt-staging
+#    cert-manager.io/acme-challenge-type: http01
+#spec:
+#  rules:
+#  - host: keycloak.kojiki.eu
+#    http:
+#      paths:
+#      - path: /
+#        pathType: Prefix
+#        backend:
+#          service:
+#            name: keycloak
+#            port:
+#              number: 8080
+#  tls:
+#  - hosts:
+#    - keycloak.kojiki.eu
+#    secretName: kc-secret-name
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-pv-claim
+  namespace: kojiki
+  labels:
+    app: keycloak
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

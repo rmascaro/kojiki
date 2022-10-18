@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  namespace: keycloak
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  rules:
+  - host: kc.kojiki.eu
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - kc.kojiki.eu
+    secretName: kc-secret-name

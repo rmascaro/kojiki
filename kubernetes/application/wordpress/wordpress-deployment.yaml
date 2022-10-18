@@ -85,29 +85,29 @@ spec:
       - name: wordpress-persistent-storage
         persistentVolumeClaim:
           claimName: wp-pv-claim
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: wordpress
-  namespace: kojiki
-  annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
-    cert-manager.io/cluster-issuer: letsencrypt
-    cert-manager.io/acme-challenge-type: http01
-spec:
-  rules:
-  - host: w3-int.kojiki.eu
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: wordpress
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - w3-int.kojiki.eu
-    secretName: wp-secret-name
+#---
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: wordpress
+#  namespace: kojiki
+#  annotations:
+#    kubernetes.io/ingress.class: azure/application-gateway
+#    cert-manager.io/cluster-issuer: letsencrypt
+#    cert-manager.io/acme-challenge-type: http01
+#spec:
+#  rules:
+#  - host: w3-int.kojiki.eu
+#    http:
+#      paths:
+#      - path: /
+#        pathType: Prefix
+#        backend:
+#          service:
+#            name: wordpress
+#            port:
+#              number: 80
+#  tls:
+#  - hosts:
+#    - w3-int.kojiki.eu
+#    secretName: wp-secret-name
